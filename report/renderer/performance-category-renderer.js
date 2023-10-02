@@ -220,6 +220,7 @@ export class PerformanceCategoryRenderer extends CategoryRenderer {
     const diagnosticAudits = category.auditRefs
         .filter(audit => this._isPerformanceInsight(audit))
         .filter(audit => !ReportUtils.showAsPassed(audit.result));
+
     /** @type {Array<{auditRef:LH.ReportResult.AuditRef, overallImpact: number, overallLinearImpact: number, guidanceLevel: number}>} */
     const auditImpacts = [];
     diagnosticAudits.forEach(audit => {
@@ -227,8 +228,8 @@ export class PerformanceCategoryRenderer extends CategoryRenderer {
         overallImpact: overallImpact,
         overallLinearImpact: overallLinearImpact,
       } = this.overallImpact(audit, metricAudits);
-      // eslint-disable-next-line max-len
-      auditImpacts.push({auditRef: audit, overallImpact, overallLinearImpact, guidanceLevel: audit.result.guidanceLevel || 1});
+      const guidanceLevel = audit.result.guidanceLevel || 1;
+      auditImpacts.push({auditRef: audit, overallImpact, overallLinearImpact, guidanceLevel});
     });
 
     auditImpacts.sort((a, b) => {
@@ -245,10 +246,11 @@ export class PerformanceCategoryRenderer extends CategoryRenderer {
 
       if (a.guidanceLevel !== b.guidanceLevel) return b.guidanceLevel - a.guidanceLevel;
 
-      // eslint-disable-next-line max-len
-      const scoreA = a.auditRef.result.scoreDisplayMode === 'informative' ? 100 : Number(a.auditRef.result.score);
-      // eslint-disable-next-line max-len
-      const scoreB = b.auditRef.result.scoreDisplayMode === 'informative' ? 100 : Number(b.auditRef.result.score);
+      const scoreA = a.auditRef.result.scoreDisplayMode === 'informative'
+        ? 100
+        : Number(a.auditRef.result.score);
+      const scoreB = b.auditRef.result.scoreDisplayMode === 'informative'
+        ? 100 : Number(b.auditRef.result.score);
       return scoreA - scoreB;
     });
 
