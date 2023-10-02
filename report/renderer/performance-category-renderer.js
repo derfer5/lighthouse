@@ -251,7 +251,8 @@ export class PerformanceCategoryRenderer extends CategoryRenderer {
         ? 100
         : Number(a.auditRef.result.score);
       const scoreB = b.auditRef.result.scoreDisplayMode === 'informative'
-        ? 100 : Number(b.auditRef.result.score);
+        ? 100
+        : Number(b.auditRef.result.score);
       return scoreA - scoreB;
     });
 
