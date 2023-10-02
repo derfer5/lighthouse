@@ -228,7 +228,7 @@ export class PerformanceCategoryRenderer extends CategoryRenderer {
         overallImpact: overallImpact,
         overallLinearImpact: overallLinearImpact,
       } = this.overallImpact(audit, metricAudits);
-      const guidanceLevel = audit.result.guidanceLevel || 1;
+      const guidanceLevel = audit.result.guidanceLevel ?? 1;
       auditImpacts.push({auditRef: audit, overallImpact, overallLinearImpact, guidanceLevel});
     });
 
