@@ -219,41 +219,42 @@ export class PerformanceCategoryRenderer extends CategoryRenderer {
     // Diagnostics
     const diagnosticAudits = category.auditRefs
         .filter(audit => this._isPerformanceInsight(audit))
-        .filter(audit => !ReportUtils.showAsPassed(audit.result))
-        .sort((a, b) => {
-          // Sort audits by impact, prioritizing those with a higher overallImpact first,
-          // then falling back to linearImpact, guidance level and score.
-          const {
-            overallImpact: aOverallImpact,
-            overallLinearImpact: aOverallLinearImpact,
-          } = this.overallImpact(a, metricAudits);
-          const {
-            overallImpact: bOverallImpact,
-            overallLinearImpact: bOverallLinearImpact,
-          } = this.overallImpact(b, metricAudits);
+        .filter(audit => !ReportUtils.showAsPassed(audit.result));
+    /** @type {Array<{auditRef:LH.ReportResult.AuditRef, overallImpact: number, overallLinearImpact: number, guidanceLevel: number}>} */
+    const auditImpacts = [];
+    diagnosticAudits.forEach(audit => {
+      const {
+        overallImpact: overallImpact,
+        overallLinearImpact: overallLinearImpact,
+      } = this.overallImpact(audit, metricAudits);
+      // eslint-disable-next-line max-len
+      auditImpacts.push({auditRef: audit, overallImpact, overallLinearImpact, guidanceLevel: audit.result.guidanceLevel || 1});
+    });
 
-          const aGuidanceLevel = a.result.guidanceLevel || 1;
-          const bGuidanceLevel = b.result.guidanceLevel || 1;
+    auditImpacts.sort((a, b) => {
+      // Sort audits by impact, prioritizing those with a higher overallImpact first,
+      // then falling back to linearImpact, guidance level and score.
+      if (a.overallImpact !== b.overallImpact) return b.overallImpact - a.overallImpact;
 
-          if (aOverallImpact !== bOverallImpact) return bOverallImpact - aOverallImpact;
+      if (
+        a.overallImpact === 0 && b.overallImpact === 0 &&
+        a.overallLinearImpact !== b.overallLinearImpact
+      ) {
+        return b.overallLinearImpact - a.overallLinearImpact;
+      }
 
-          if (
-            aOverallImpact === 0 && bOverallImpact === 0 &&
-            aOverallLinearImpact !== bOverallLinearImpact
-          ) {
-            return bOverallLinearImpact - aOverallLinearImpact;
-          }
+      if (a.guidanceLevel !== b.guidanceLevel) return b.guidanceLevel - a.guidanceLevel;
 
-          if (aGuidanceLevel !== bGuidanceLevel) return bGuidanceLevel - aGuidanceLevel;
+      // eslint-disable-next-line max-len
+      const scoreA = a.auditRef.result.scoreDisplayMode === 'informative' ? 100 : Number(a.auditRef.result.score);
+      // eslint-disable-next-line max-len
+      const scoreB = b.auditRef.result.scoreDisplayMode === 'informative' ? 100 : Number(b.auditRef.result.score);
+      return scoreA - scoreB;
+    });
 
-          const scoreA = a.result.scoreDisplayMode === 'informative' ? 100 : Number(a.result.score);
-          const scoreB = b.result.scoreDisplayMode === 'informative' ? 100 : Number(b.result.score);
-          return scoreA - scoreB;
-        });
-
-    if (diagnosticAudits.length) {
+    if (auditImpacts.length) {
       const [groupEl, footerEl] = this.renderAuditGroup(groups['diagnostics']);
-      diagnosticAudits.forEach(item => groupEl.insertBefore(this.renderAudit(item), footerEl));
+      auditImpacts.forEach(item => groupEl.insertBefore(this.renderAudit(item.auditRef), footerEl));
       groupEl.classList.add('lh-audit-group--diagnostics');
       element.append(groupEl);
     }
